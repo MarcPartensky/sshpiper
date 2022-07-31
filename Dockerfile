@@ -1,30 +1,29 @@
-FROM golang:1.17-alpine as builder
+FROM golang:1.18-bullseye as builder
 
-RUN apk update \
-        && apk upgrade \
-        && apk add --no-cache \
-        ca-certificates git \
-        && update-ca-certificates 2>/dev/null
+ARG VER=devel
 
-ADD . /go/src/github.com/tg123/sshpiper/
-WORKDIR /go/src/github.com/tg123/sshpiper/sshpiperd
-RUN CGO_ENABLED=0 go build -ldflags "$(/go/src/github.com/tg123/sshpiper/sshpiperd/ldflags.sh)" -o /go/bin/sshpiperd
+ENV CGO_ENABLED=0
 
+RUN mkdir -p /cache/crypto
+COPY crypto /cache/crypto
+COPY go.mod go.sum /cache/
+WORKDIR /cache
+RUN go mod download
 
-FROM alpine:latest 
+RUN mkdir -p /sshpiperd/plugins
+ADD . /src/
+WORKDIR /src
+RUN --mount=type=cache,target=/root/.cache/go-build go build -o /sshpiperd -ldflags "-X main.mainver=$VER" ./cmd/...
+RUN --mount=type=cache,target=/root/.cache/go-build go build -o /sshpiperd/plugins  -ldflags "-X main.mainver=$VER" ./plugin/...
+ADD entrypoint.sh /sshpiperd
+
+FROM busybox
 LABEL maintainer="Boshi Lian<farmer1992@gmail.com>"
 
-RUN apk update \
-        && apk upgrade \
-        && apk add --no-cache \
-        ca-certificates \
-        && update-ca-certificates 2>/dev/null
-        
+COPY --from=ep76/openssh-static:latest /usr/bin/ssh-keygen /bin/ssh-keygen
 RUN mkdir /etc/ssh/
 
-ADD entrypoint.sh /
-COPY --from=builder /go/bin/sshpiperd /
+COPY --from=builder /sshpiperd/ /sshpiperd
 EXPOSE 2222
 
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["/sshpiperd", "daemon"]
+CMD ["/sshpiperd/entrypoint.sh"]

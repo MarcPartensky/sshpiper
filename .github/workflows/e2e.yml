@@ -2,7 +2,7 @@ name: E2E
 
 on:
   workflow_run:
-    workflows: ["Go"]
+    workflows: ["Go Unit Test"]
     types: [completed]
     
 jobs:
@@ -13,9 +13,19 @@ jobs:
     steps:
 
     - name: Check out code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.workflow_run.head_sha }}
+        submodules: 'recursive'      
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
 
     - name: E2E
       run: docker-compose up --build --abort-on-container-exit
-      working-directory: sshpiperd/e2e
+      working-directory: e2e
+      env:
+        COMPOSE_DOCKER_CLI_BUILD: "1"
+        DOCKER_BUILDKIT: "1"
+
 
