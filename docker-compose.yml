@@ -6,4 +6,4 @@ services:
     build: .
     volumes:
       - /srv/sshpiper:./out
-    cmd: ./out/workingdirbykey
+    command: ./out/workingdirbykey
