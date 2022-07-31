@@ -2,7 +2,7 @@ name: Go Unit Test
 
 on:
   push:
-    branches: [ master ]
+    branches: [ "*" ]
   pull_request:
     types: [assigned, opened, synchronize, reopened]
   release:
