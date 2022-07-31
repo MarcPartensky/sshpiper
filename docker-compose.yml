@@ -1,0 +1,9 @@
+version: "3.9"
+services:
+  sshpiper:
+    image: marcpartensky/sshpiper
+    restart: unless-stopped
+    build: .
+    volumes:
+      - /srv/sshpiper:./out
+    command: ./out/workingdirbykey
