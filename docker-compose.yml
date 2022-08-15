@@ -3,7 +3,10 @@ services:
   sshpiper:
     image: marcpartensky/sshpiper
     restart: unless-stopped
+    ports:
+      - "2222:2222"
+    # network_mode: host
     build: .
-    volumes:
-      - /srv/sshpiper:./out
-    command: ./out/workingdirbykey
+    # volumes:
+    #   - /srv/sshpiper:/out
+    # command: ./out/workingdirbykey
